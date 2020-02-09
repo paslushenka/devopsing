@@ -1,0 +1,6 @@
+nexus
+
+[all:vars]
+ansible_connection=local
+ansible_user=vagrant
+ansible_password=vagrant
