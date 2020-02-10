@@ -1,0 +1,34 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+$script = <<-'SCRIPT'
+sudo apt-get update
+sudo apt-get -y install mc default-jdk build-essential git
+echo 'export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64' > /etc/profile.d/jdk.sh
+echo 'export PATH=$JAVA_HOME/bin:$PATH' >> /etc/profile.d/jdk.sh
+source /etc/profile.d/jdk.sh
+
+wget -q -O - https://pkg.jenkins.io/debian/jenkins.io.key | sudo apt-key add -
+sudo sh -c 'echo deb https://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
+sudo apt-get update
+sudo apt-get -y install jenkins
+SCRIPT
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "debian/buster64"
+  if Vagrant.has_plugin?("vagrant-vbguest")
+    config.vbguest.auto_update = false
+  end
+
+  config.vm.define "jenkins" do |jenkins|
+    jenkins.vm.synced_folder "files", "/home/vagrant/files", type: "rsync"
+    jenkins.vm.network "forwarded_port", guest: 8080, host: 8080, host_ip: "127.0.0.1"
+    jenkins.vm.network "private_network", ip: "172.31.100.80"
+
+    jenkins.vm.provider "virtualbox" do |vb|
+        vb.name = "jenkins"
+        vb.memory = "1024"
+    end
+    config.vm.provision "shell", inline: $script
+  end
+end
